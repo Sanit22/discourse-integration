@@ -64,38 +64,6 @@ class AuthUtils(UserUtils):
             )
             db.session.add(user)
             db.session.commit()
-            headers = {
-            'Access-Control-Allow-Origin':'*',
-            "Content-Type": "application/json",
-            "Api-Key": "f402d2e11bce593765d8a76e8e056e9fac451f0f6203f99c37fb2bf3940f8b82",
-            "Api-Username": "sanit.arora19",
-            # Add any additional headers as needed
-            }
-
-            data = {
-            "name": "test_12",
-            "username": "test_12",
-            "email":"test12@test12.com",
-            "password":"Hello@12345",
-            "active": True,
-            "approved": True,
-            "user_fields[1]": True,
-            "external_ids": { }
-            }
-
-        # Make a POST request to the external API
-            
-            response = requests.post('http://localhost:4200/users.json', json=data, headers=headers)
-            if response.status_code == 200:
-            # Parse the JSON response
-                response_data = response.json()
-            # Return the response as JSON
-                print("SIGN UP RESPONSE", response_data)
-                response_admin = requests.put('http://localhost:4200/admin/users/5/activate.json', json=data, headers=headers)
-                print("ADMIN RESPONSE", response_admin.json())
-            else:
-                # If the request was not successful, return an error message
-                return jsonify({'error': 'Failed to make POST request to external API'}), response.status_code
                 
             
         if details["operation"] == "verify_user":
@@ -266,6 +234,10 @@ class Register(Resource):
                 if auth_utils.is_blank(value) and key != "last_name":
                     raise BadRequest(status_msg=f"{key} is empty or invalid")
             details["operation"] = "register"
+            
+
+            #add discourse api
+            
 
             # verify registration form data
             if auth_utils.verify_register_form(details):
