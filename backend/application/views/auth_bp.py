@@ -248,11 +248,15 @@ class Register(Resource):
                     raise AlreadyExistError(status_msg="Email is already in use")
                 else:
                     # generate unique user_id
-                    user_id = auth_utils.generate_user_id(email=details["email"])
+                   #user_id = auth_utils.generate_user_id(email=details["email"])
+                     #call discourse api to register user
+                    #user_id -> response from discourse
 
                     # create new user in Auth table
                     details["user_id"] = user_id
                     user = auth_utils.update_auth_table(details=details)
+
+                   
 
                     # Redirect to login page in frontend
                     # No need to create web_token as during login it will
@@ -349,6 +353,14 @@ class NewUsers(Resource):
             if user:
                 # user exists , proceed to update
                 user = auth_utils.update_auth_table(details=details)
+                # call discourse group api to add user to a group
+                #
+                # {
+                #     "student": "group_id1",
+                #     "facult"...
+                # }
+                #if groupid = d[user_type]
+                 
                 raise Success_200(status_msg="User verified and updated in database.")
             else:
                 raise NotFoundError(status_msg="User does not exists.")
