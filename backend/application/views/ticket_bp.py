@@ -10,6 +10,7 @@ import time
 from flask import Blueprint, request
 from flask_restful import Api, Resource
 from application.logger import logger
+from application.notifications import send_gspace_message
 from application.common_utils import (
     token_required,
     users_required,
@@ -356,6 +357,9 @@ class TicketAPI(Resource):
             try:
                 db.session.add(ticket)
                 db.session.commit()
+                if details["priority"] == 'high':
+                    message = "Dear Instructor,You have query in discourse please have a look!"
+                    send_gspace_message(message)
             except Exception as e:
                 logger.error(
                     f"TicketAPI->post : Error occured while creating a new ticket : {e}"

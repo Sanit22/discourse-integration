@@ -101,6 +101,8 @@ export default {
         { text: "Student", value: "student" },
         { text: "Support", value: "support" },
         { text: "Admin", value: "admin" },
+        { text: "POD/TA" , value: "POD/TA"},
+        { text: "Faculty" , value: "Faculty"}
       ],
       form: {
         first_name: "",
@@ -111,12 +113,6 @@ export default {
         retype_password: "",
       },
 
-      form1: {
-        name: "test_123",
-        username: "test_123",
-        email:"test_123@test_123.com",
-        password:"Hello@12345"
-      },
       show: true,
     };
   },
@@ -156,41 +152,7 @@ export default {
             message: "Internal Server Error",
           });
         });
-
-
-      // call 2
-
-        fetch('http://localhost:4200/users.json', {
-        method: "POST",
-        headers: {
-          "Access-Control-Allow-Origin":"*",
-          "Content-Type": "application/json",
-          "Api-Key": "f402d2e11bce593765d8a76e8e056e9fac451f0f6203f99c37fb2bf3940f8b82",
-          "Api-Username": "sanit.arora19",
-        },
-        body: JSON.stringify(this.form1),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("DATA FROM DISCOURSE: ", data);
-          if (data.category == "success") {
-            this.flashMessage.success({
-              message: data.message,
-            });
-            this.$router.push("/login");
-          }
-          if (data.category == "error") {
-            this.flashMessage.error({
-              message: data.message,
-            });
-          }
-        })
-        .catch((error) => {
-          this.$log.error(`Error : ${error}`);
-          this.flashMessage.error({
-            message: "Internal Server Error",
-          });
-        });
+   
     },
     onReset(event) {
       event.preventDefault();

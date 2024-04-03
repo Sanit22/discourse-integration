@@ -7,6 +7,7 @@
 
 import os
 import requests
+
 from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from application.logger import logger
@@ -14,6 +15,7 @@ from application.responses import *
 from application.models import Auth
 from application.globals import TOKEN_VALIDITY, BACKEND_ROOT_PATH
 from application.database import db
+from application.notifications import send_gspace_message
 import time
 from application.views.user_utils import UserUtils
 from application.common_utils import (
@@ -22,6 +24,8 @@ from application.common_utils import (
     convert_img_to_base64,
     is_img_path_valid,
 )
+
+
 
 # --------------------  Code  --------------------
 
@@ -212,7 +216,6 @@ class Register(Resource):
         details = {
             "first_name": "",
             "last_name": "",
-
             "email": "",
             "password": "",
             "retype_password": "",
@@ -238,7 +241,29 @@ class Register(Resource):
 
             #add discourse api
             
-
+            data = {
+                        "name": details["first_name"],
+                        "username": details["first_name"],
+                        "email":details["email"],
+                        "password":details["password"],
+                        "active": True,
+                        "approved": True,
+                        "user_fields[1]": True,
+                        "external_ids": { }
+                        }
+            response = requests.post('http://localhost:4200/users.json', json=data, headers=headers)
+            if response.status_code == 200:
+            # Parse the JSON response
+                response_data = response.json()
+                user_id = response_data['user_id'] 
+            # Return the response as JSON
+                print("SIGN UP RESPONSE", response_data)
+                message = "new user has joined the platform please add them to their respective role."
+                send_gspace_message(message)
+            else:
+                # If the request was not successful, return an error message
+                return jsonify({'error': 'Failed to make POST request to external API'}), response.status_code
+            
             # verify registration form data
             if auth_utils.verify_register_form(details):
                 # check if user exists
@@ -247,8 +272,8 @@ class Register(Resource):
                     # user exists means email is already in use
                     raise AlreadyExistError(status_msg="Email is already in use")
                 else:
-                    # generate unique user_id
-                    user_id = auth_utils.generate_user_id(email=details["email"])
+                    # # generate unique user_id
+                    # user_id = auth_utils.generate_user_id(email=details["email"])
 
                     # create new user in Auth table
                     details["user_id"] = user_id
@@ -349,6 +374,18 @@ class NewUsers(Resource):
             if user:
                 # user exists , proceed to update
                 user = auth_utils.update_auth_table(details=details)
+                data = {
+                    "usernames": user.first_name
+                }
+                if user.role == 'student' : 
+                    response = requests.put('http://localhost:4200/groups/43/members.json',json=data, headers=headers)
+                elif user.role == 'support' : 
+                    response = requests.put('http://localhost:4200/groups/42/members.json',json=data, headers=headers) 
+                elif user.role == 'Faculty' :
+                    response = requests.put('http://localhost:4200/groups/45/members.json',json=data, headers=headers)
+                elif user.role == 'POD/TA':   
+                    response = requests.put('http://localhost:4200/groups/44/members.json',json=data, headers=headers)
+                print(response) 
                 raise Success_200(status_msg="User verified and updated in database.")
             else:
                 raise NotFoundError(status_msg="User does not exists.")

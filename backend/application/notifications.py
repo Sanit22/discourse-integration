@@ -24,7 +24,9 @@ from email import encoders
 from email.utils import formatdate
 from email.mime.application import MIMEApplication
 from application.globals import *
+from json import dumps
 
+from httplib2 import Http
 
 # --------------------  Code  --------------------
 
@@ -94,5 +96,16 @@ def send_email(
         else:
             logger.error("No internet connection to send mail")
 
-
+def send_gspace_message(message):
+    url = WEBHOOK_URL
+    bot_message = {'text': message}
+    message_headers = {'Content-Type': 'application/json; charset=UTF-8'}
+    http_obj = Http()
+    response = http_obj.request(
+        uri=url,
+        method='POST',
+        headers=message_headers,
+        body=dumps(bot_message),
+    )
+    print(response)
 # --------------------  END  --------------------

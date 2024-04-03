@@ -27,6 +27,7 @@ TICKET_ATTACHMENTS_PATH = os.path.join(
 FAQ_ATTACHMENTS_PATH = os.path.join(
     BACKEND_ROOT_PATH, "databases", "images", "faq_attachments"
 )
+WEBHOOK_URL = "https://chat.googleapis.com/v1/spaces/AAAAdGe_8Qw/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=xO2_MwB96-0lwCHCEatV8ecnIHO6qJIFAa0ttpcz_MQ"
 
 # Mailhog runs at http://127.0.0.1:8025/
 SMTP_SERVER_HOST = "127.0.0.1"
