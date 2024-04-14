@@ -7,8 +7,10 @@
 
 import hashlib
 import time
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
+from flask import abort
+import requests
 from application.logger import logger
 from application.common_utils import (
     token_required,
@@ -356,6 +358,7 @@ class TicketAPI(Resource):
             try:
                 db.session.add(ticket)
                 db.session.commit()
+
             except Exception as e:
                 logger.error(
                     f"TicketAPI->post : Error occured while creating a new ticket : {e}"
@@ -607,6 +610,51 @@ class TicketAPI(Resource):
                 raise NotFoundError(status_msg="Ticket does not exists")
 
 
+class DiscourseTicket(Resource):
+    def post(self):
+        """
+        Share an existing thread to discourse 
+        """
+        ticket_details = request.get_json()
+        curr_ticket_id = ticket_details['ticket_id']
+        ticket_details.pop("ticket_id")
+
+        try:
+            ticket = Ticket.query.filter_by(ticket_id=curr_ticket_id).first()
+        except Exception as e:
+            logger.error(
+                f"TicketAPI->get : Error occured while fetching ticket data : {e}"
+            )
+            raise InternalServerError(status_msg= f"TicketAPI->get : Error occured while fetching ticket data : {e}")
+
+        if ticket:
+            response = requests.post(
+                'http://localhost:4200/posts.json',
+                json=ticket_details,
+                headers=HEADERS,
+                verify=False
+            )
+
+            res = response.json()
+            print(res)
+            dis_ticket_id = ''
+            if res.get('id'):
+                dis_ticket_id = res['id']
+            else:
+                logger.error(
+                    "Error occured in creating a thread in discourse."
+                )
+                raise BadRequest(status_msg="Error occured in creating a thread in discourse.")
+            
+            ticket.dis_ticket_id = dis_ticket_id
+            db.session.add(ticket)
+            db.session.commit()
+            logger.info("Ticket created on discourse successfully.")
+            raise Success_200(status_msg=f"Ticket created successfully on discourse.")
+        else:
+            raise BadRequest(status_msg="No ticket found.")
+
+
 class AllTicketsAPI(Resource):
     @token_required
     @users_required(users=["student", "support", "admin"])
@@ -647,7 +695,7 @@ class AllTicketsAPI(Resource):
             raise PermissionDenied(
                 status_msg="Only student can search all tickets using query."
             )
-
+        
         all_tickets = []
 
         # get all tickets
@@ -742,5 +790,6 @@ ticket_api.add_resource(
 )  # path is /api/v1/ticket
 ticket_api.add_resource(AllTicketsAPI, "/all-tickets")
 ticket_api.add_resource(AllTicketsUserAPI, "/all-tickets/<string:user_id>")
+ticket_api.add_resource(DiscourseTicket, "/share-to-discourse")
 
 # --------------------  END  --------------------

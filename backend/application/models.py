@@ -35,6 +35,7 @@ class Auth(db.Model):
 class Ticket(db.Model):
     __tablename__ = "ticket"
     ticket_id = db.Column(db.String, primary_key=True)
+    dis_ticket_id = db.Column(db.Integer)
     title = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=True, default="")
     solution = db.Column(db.String, nullable=True, default="")
