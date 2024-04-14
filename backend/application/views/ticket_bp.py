@@ -312,12 +312,12 @@ class TicketAPI(Resource):
             "tag_1": "",
             "tag_2": "",
             "tag_3": "",
+            "dis_ticket_id": ""
         }
 
         # check user_id
         if ticket_utils.is_blank(user_id):
             raise BadRequest(status_msg="User id is empty/missing in url")
-
         try:
             user = Auth.query.filter_by(user_id=user_id).first()
             if not user:
@@ -349,31 +349,58 @@ class TicketAPI(Resource):
                     status_msg=f"Ticket title and at least one tag is required"
                 )
 
-            ticket_id = ticket_utils.generate_ticket_id(details["title"], user_id)
-            details["ticket_id"] = ticket_id
-            details["created_by"] = user_id
-            details["created_on"] = int(time.time())
-            ticket = Ticket(**details)
 
-            try:
-                db.session.add(ticket)
-                db.session.commit()
+        if form.get('share_discourse'):
+            #add this ticket to discourse
+            discourse_details = {
+                "title": details['title'],
+                "raw": details['description'],
+                "category": 4
+            }
 
-            except Exception as e:
-                logger.error(
-                    f"TicketAPI->post : Error occured while creating a new ticket : {e}"
-                )
-                raise InternalServerError(
-                    status_msg="Error occured while creating a new ticket"
-                )
+            response = requests.post(
+                'http://localhost:4200/posts.json',
+                json=discourse_details,
+                headers=HEADERS,
+                verify=False
+            )
+
+            res = response.json()
+            print(res)
+            if res.get('id'):
+                details['dis_ticket_id'] = res['id']
             else:
-                logger.info("Ticket created successfully.")
-
-                # add attachments now
-                status, message = ticket_utils.save_ticket_attachments(
-                    attachments, ticket_id, user_id, operation="create_ticket"
+                logger.error(
+                    "Error occured in creating a thread in discourse."
                 )
-                raise Success_200(status_msg=f"Ticket created successfully. {message}")
+                raise BadRequest(status_msg="Error occured in creating a thread in discourse.")
+    
+        ticket_id = ticket_utils.generate_ticket_id(details["title"], user_id)
+
+        details["ticket_id"] = ticket_id
+        details["created_by"] = user_id
+        details["created_on"] = int(time.time())
+        ticket = Ticket(**details)
+
+        try:
+            db.session.add(ticket)
+            db.session.commit()
+
+        except Exception as e:
+            logger.error(
+                f"TicketAPI->post : Error occured while creating a new ticket : {e}"
+            )
+            raise InternalServerError(
+                status_msg="Error occured while creating a new ticket"
+            )
+        else:
+            logger.info("Ticket created successfully.")
+
+            # add attachments now
+            status, message = ticket_utils.save_ticket_attachments(
+                attachments, ticket_id, user_id, operation="create_ticket"
+            )
+            raise Success_200(status_msg=f"Ticket created successfully. {message}")
 
     @token_required
     @users_required(users=["student", "support"])

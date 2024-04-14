@@ -38,6 +38,7 @@ class Ticket(db.Model):
     dis_ticket_id = db.Column(db.Integer)
     title = db.Column(db.String, nullable=False)
     description = db.Column(db.String, nullable=True, default="")
+    category = db.Column(db.Integer)
     solution = db.Column(db.String, nullable=True, default="")
     priority = db.Column(
         db.String, nullable=False, default="low"
