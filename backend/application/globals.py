@@ -34,4 +34,7 @@ SMTP_SERVER_PORT = 1025
 SENDER_ADDRESS = "osts_group_14@gmail.com"  # dummy mail and password
 SENDER_PASSWORD = "1234"
 
+# Discourse
+DISCOURSE_DEFAULT_HOST = "http://127.0.0.1:4200"
+
 # --------------------  END  --------------------
