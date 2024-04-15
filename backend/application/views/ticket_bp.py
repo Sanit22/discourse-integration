@@ -312,7 +312,7 @@ class TicketAPI(Resource):
             "tag_1": "",
             "tag_2": "",
             "tag_3": "",
-            "dis_ticket_id": ""
+            "dis_ticket_id": "",
         }
 
         # check user_id
@@ -349,32 +349,31 @@ class TicketAPI(Resource):
                     status_msg=f"Ticket title and at least one tag is required"
                 )
 
-
-        if form.get('share_discourse'):
-            #add this ticket to discourse
+        if form.get("share_discourse"):
+            # add this ticket to discourse
             discourse_details = {
-                "title": details['title'],
-                "raw": details['description'],
-                "category": 4
+                "title": details["title"],
+                "raw": details["description"],
+                "category": 4,
             }
 
             response = requests.post(
-                'http://localhost:4200/posts.json',
+                "http://localhost:4200/posts.json",
                 json=discourse_details,
                 headers=HEADERS,
-                verify=False
+                verify=False,
             )
 
             res = response.json()
             print(res)
-            if res.get('id'):
-                details['dis_ticket_id'] = res['id']
+            if res.get("id"):
+                details["dis_ticket_id"] = res["id"]
             else:
-                logger.error(
-                    "Error occured in creating a thread in discourse."
+                logger.error("Error occured in creating a thread in discourse.")
+                raise BadRequest(
+                    status_msg="Error occured in creating a thread in discourse."
                 )
-                raise BadRequest(status_msg="Error occured in creating a thread in discourse.")
-    
+
         ticket_id = ticket_utils.generate_ticket_id(details["title"], user_id)
 
         details["ticket_id"] = ticket_id
@@ -502,6 +501,39 @@ class TicketAPI(Resource):
                     db.session.add(ticket)
                     db.session.commit()
 
+                    # checking if the ticket in discourse exists
+                    discourse_ticket_res = requests.get(
+                        DISCOURSE_DEFAULT_HOST
+                        + f"/posts/{ticket.dis_ticket_id}.json",
+                        json=discourse_details,
+                        headers=HEADERS,
+                        verify=False,
+                    )
+
+                    if discourse_ticket_res.status_code == 200:
+                        # update this ticket to discourse
+                        discourse_details = {
+                            "title": details["title"],
+                            "raw": details["description"],
+                            "category": 4,
+                        }
+
+                        response = requests.put(
+                            DISCOURSE_DEFAULT_HOST
+                            + f"/posts/{ticket.dis_ticket_id}.json",
+                            json=discourse_details,
+                            headers=HEADERS,
+                            verify=False,
+                        )
+
+                        if response.status_code != 200:
+                            logger.error(
+                                "Error occured in updating a thread in discourse."
+                            )
+                            raise BadRequest(
+                                status_msg="Error occured in updating a thread in discourse."
+                            )
+
                     raise Success_200(status_msg="Successfully updated a ticket.")
 
                 else:
@@ -628,6 +660,19 @@ class TicketAPI(Resource):
                     # delete ticket
                     db.session.delete(ticket)
                     db.session.commit()
+
+                    response = requests.delete(
+                        DISCOURSE_DEFAULT_HOST
+                        + f"/posts/{ticket.dis_ticket_id}.json",
+                        headers=HEADERS,
+                        verify=False,
+                    )
+
+                    if response.status_code != 200:
+                        logger.error(
+                            "Error occured in deleting a thread in discourse."
+                        )
+
                     raise Success_200(status_msg="Ticket deleted successfully")
                 else:
                     raise PermissionDenied(
@@ -640,10 +685,10 @@ class TicketAPI(Resource):
 class DiscourseTicket(Resource):
     def post(self):
         """
-        Share an existing thread to discourse 
+        Share an existing thread to discourse
         """
         ticket_details = request.get_json()
-        curr_ticket_id = ticket_details['ticket_id']
+        curr_ticket_id = ticket_details["ticket_id"]
         ticket_details.pop("ticket_id")
 
         try:
@@ -652,27 +697,29 @@ class DiscourseTicket(Resource):
             logger.error(
                 f"TicketAPI->get : Error occured while fetching ticket data : {e}"
             )
-            raise InternalServerError(status_msg= f"TicketAPI->get : Error occured while fetching ticket data : {e}")
+            raise InternalServerError(
+                status_msg=f"TicketAPI->get : Error occured while fetching ticket data : {e}"
+            )
 
         if ticket:
             response = requests.post(
-                'http://localhost:4200/posts.json',
+                "http://localhost:4200/posts.json",
                 json=ticket_details,
                 headers=HEADERS,
-                verify=False
+                verify=False,
             )
 
             res = response.json()
             print(res)
-            dis_ticket_id = ''
-            if res.get('id'):
-                dis_ticket_id = res['id']
+            dis_ticket_id = ""
+            if res.get("id"):
+                dis_ticket_id = res["id"]
             else:
-                logger.error(
-                    "Error occured in creating a thread in discourse."
+                logger.error("Error occured in creating a thread in discourse.")
+                raise BadRequest(
+                    status_msg="Error occured in creating a thread in discourse."
                 )
-                raise BadRequest(status_msg="Error occured in creating a thread in discourse.")
-            
+
             ticket.dis_ticket_id = dis_ticket_id
             db.session.add(ticket)
             db.session.commit()
@@ -722,7 +769,7 @@ class AllTicketsAPI(Resource):
             raise PermissionDenied(
                 status_msg="Only student can search all tickets using query."
             )
-        
+
         all_tickets = []
 
         # get all tickets
