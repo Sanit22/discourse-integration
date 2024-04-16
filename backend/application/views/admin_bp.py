@@ -7,7 +7,7 @@
 # --------------------  Imports  --------------------
 
 from datetime import datetime
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from flask_restful import Api, Resource
 from application.logger import logger
 from application.common_utils import (
@@ -18,6 +18,7 @@ from application.views.user_utils import UserUtils
 from application.responses import *
 from application.models import *
 from application.globals import *
+import requests
 
 
 # --------------------  Code  --------------------
@@ -239,10 +240,34 @@ class AdminCreateCategory(Resource):
         """
         try:
             category_name = request.json.get('categoryName')
-            """
+            category_name = str(category_name)
+            cat = {
+                    "name": category_name,
+                    "color": "49d9e9",
+                    "text_color": "f0fcfd",
+                    "parent_category_id": 0,
+                    "allow_badges": True,
+                    "slug": "string",
+                    "topic_featured_links_allowed": True,
+                    "permissions": {
+                        "everyone": 1,
+                        "staff": 0
+                    },
+                    "search_priority": 0,
+                    "form_template_ids": [
+                        'null'
+                    ]
+                    }
+            response = requests.post(
+                "http://localhost:4200/posts.json",
+                json=cat,
+                headers=HEADERS,
+                verify=False,
+            )
+
+            res = response.json()
             
-            """
-            return jsonify({'message': f'Category "{category_name}" created successfully'})
+            return jsonify({'message': f'Category "{category_name}" created successfully', 'response':res})
         except Exception as e:
             logger.error(f"AdminCreateCategory->create_category : Error occured while creating the category : {e}")
             return jsonify({'error': str(e)}), 500
@@ -250,5 +275,6 @@ class AdminCreateCategory(Resource):
 
 
 admin_api.add_resource(AdminAPI, "/<string:user_id>")  # path is /api/v1/admin
+admin_api.add_resource(AdminCreateCategory, "/<string:user_id>")   # path is api/v1/create-category
 
 # --------------------  END  --------------------

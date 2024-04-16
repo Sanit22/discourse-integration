@@ -12,9 +12,6 @@
 
 <script>
 import UserNavbar from "../components/UserNavbar.vue";
-// import TicketForm from "../components/TicketForm.vue";
-// import SearchTicket from "../components/SearchTicket.vue";
-// import FAQForm from "../components/FAQForm.vue";
 
 export default {
   name: "AdminCreateCategory",
