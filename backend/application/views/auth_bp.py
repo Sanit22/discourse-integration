@@ -13,7 +13,7 @@ from flask_restful import Api, Resource
 from application.logger import logger
 from application.responses import *
 from application.models import Auth
-from application.globals import TOKEN_VALIDITY, BACKEND_ROOT_PATH
+from application.globals import TOKEN_VALIDITY, BACKEND_ROOT_PATH,HEADERS
 from application.database import db
 from application.notifications import send_gspace_message
 import time
@@ -141,6 +141,7 @@ class Login(Resource):
                             web_token = auth_utils.generate_web_token(
                                 email, token_expiry_on
                             )
+                            print(web_token)
                             details["web_token"] = web_token
                             details["token_expiry_on"] = token_expiry_on
 
@@ -255,7 +256,7 @@ class Register(Resource):
             if response.status_code == 200:
             # Parse the JSON response
                 response_data = response.json()
-                user_id = response_data['user_id'] 
+                user_id = response_data["user_id"]
             # Return the response as JSON
                 print("SIGN UP RESPONSE", response_data)
                 message = "new user has joined the platform please add them to their respective role."
@@ -430,9 +431,68 @@ class NewUsers(Resource):
             else:
                 raise NotFoundError(status_msg="User does not exists.")
 
+class FlagUserSilence(Resource):
+    def put(self, user_id):
+        """
+        Usage
+        -----
+        When a user is flagged, update user.flag to True in auth table
 
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
+        # check if user exists
+        user = Auth.query.filter_by(user_id=user_id).first()
+        if user:
+            data = {
+                "silenced_till":"2024-12-12T08:00:00.000Z",
+                "reason":"string",
+                "message":"You have been flagged",
+                "post_action":"delete"
+            }
+            print(user_id)
+            response = requests.put(f'http://localhost:4200/admin/users/{user_id}/silence.json',json=data, headers=headers)
+            print(response) 
+            raise Success_200(status_msg="User flagged and updated in database.")
+        else:
+            raise NotFoundError(status_msg="User does not exists.")
+            
+ 
+class Deactivate(Resource):
+    def put(self, user_id):
+        """
+        Usage
+        -----
+        When admin decatives user, update user.is_verified to False in auth table and sets is_active to false in discourse database.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        """
+        # check if user exists
+        user = Auth.query.filter_by(user_id=user_id).first()
+        if user:
+            # user exists , proceed to update
+
+            response = requests.put(f"http://localhost:4200/admin/users/{user_id}/deactivate.json", headers=headers)
+            print(response)
+            user.is_verified=False 
+            raise Success_200(
+                status_msg="User Deactivated in database."
+            )
+        else:
+            raise NotFoundError(status_msg="User does not exists.")
+            
 auth_api.add_resource(Login, "/login")  # path is /api/v1/auth
 auth_api.add_resource(Register, "/register")
 auth_api.add_resource(NewUsers, "/newUsers", "/newUsers/<string:user_id>")
-
+auth_api.add_resource(FlagUserSilence,"/flaguser/<string:user_id>")
+auth_api.add_resource(Deactivate,"/Deactivate/<string:user_id>")
 # --------------------  END  --------------------

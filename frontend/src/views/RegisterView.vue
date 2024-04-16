@@ -174,7 +174,7 @@ export default {
     },
     check_password() {
       let password = this.form.password;
-      if (password.length < 4 || password.length > 9) {
+      if (password.length < 9 || password.length > 11) {
         return false;
       }
       const valid_char_array = Array.from(

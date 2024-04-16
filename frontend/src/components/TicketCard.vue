@@ -144,6 +144,7 @@
           <tr>
             <td>Created by:</td>
             <td>{{ created_by }}</td>
+            <td><b-button size="sm" variant="danger" @click="flagUser()"> Flaguser </b-button></td>
           </tr>
           <tr>
             <td>Resolved by:</td>
@@ -216,7 +217,9 @@
       </div>
 
       <template #modal-footer="{ cancel }">
+        
         <b-button size="sm" variant="secondary" @click="cancel()"> Cancel </b-button>
+
       </template>
     </b-modal>
   </div>
@@ -267,6 +270,24 @@ export default {
   methods: {
     ticketResolvedFn() {
       this.ticket_deleted = true; // its not deletd, its resolved , so its hidden
+    },
+    flagUser(){
+      fetch(`http://localhost:5000/api/v1/auth/flaguser/${this.created_by}`,
+      {
+        method:"PUT",
+        headers: {
+          "Content-Type": "application/json",
+          web_token: this.$store.getters.get_web_token,
+          user_id: this.user_id,
+        },
+      })
+        .then((response) => response.json())
+        .catch((error) => {
+          this.$log.error(`Error : ${error}`);
+          this.flashMessage.error({
+            message: "Internal Server Error",
+          });
+        });
     },
     getTicketDetails() {
       fetch(common.TICKET_API + `/${this.ticket_id}` + `/${this.created_by}`, {
