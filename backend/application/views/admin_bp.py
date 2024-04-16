@@ -22,7 +22,6 @@ from application.globals import *
 
 # --------------------  Code  --------------------
 
-
 class AdminUtils(UserUtils):
     def __init__(self, user_id=None):
         self.user_id = user_id
@@ -220,6 +219,34 @@ class AdminAPI(Resource):
             raise InternalServerError
         else:
             admin_util.update_user_profile_data(user_id, form)
+    
+class AdminCreateCategory(Resource):
+    @token_required
+    @users_required(users=["admin"])
+    def create_category():
+        """
+        Usage
+        ------
+        Create a new Discourse category,
+        #Admin can create a new category as per requirement
+        ------
+        Parameters
+        ------
+        Form data send with request
+
+        Returns
+        ------
+        """
+        try:
+            category_name = request.json.get('categoryName')
+            """
+            
+            """
+            return jsonify({'message': f'Category "{category_name}" created successfully'})
+        except Exception as e:
+            logger.error(f"AdminCreateCategory->create_category : Error occured while creating the category : {e}")
+            return jsonify({'error': str(e)}), 500
+
 
 
 admin_api.add_resource(AdminAPI, "/<string:user_id>")  # path is /api/v1/admin

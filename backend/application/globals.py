@@ -34,4 +34,7 @@ SMTP_SERVER_PORT = 1025
 SENDER_ADDRESS = "osts_group_14@gmail.com"  # dummy mail and password
 SENDER_PASSWORD = "1234"
 
+# Discourse Categories
+categories = {1:'General',2:'Software Engineering',3:'Software Testing',4:'Introduction to Big Data',5:'Market Research'}
+
 # --------------------  END  --------------------
