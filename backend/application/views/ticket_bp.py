@@ -511,6 +511,16 @@ class TicketAPI(Resource):
 
                     db.session.add(ticket)
                     db.session.commit()
+                    
+                    # added solution at discourse for a query 
+                    discourse_sol_post = {
+                        "raw": sol,
+                        "topic_id": ticket.dis_ticket_id,
+                    }
+                    response = requests.post('http://localhost:4200/posts.json', json=discourse_sol_post, headers=HEADERS)
+                    print(response)
+                    message = "Dear Student ,please have a look at the solution from support to you query"
+                    send_gspace_message(message)
 
                     # send notification to user who created as well as voted
                     try:
